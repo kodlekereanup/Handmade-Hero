@@ -70,28 +70,34 @@ Win32RenderGradient(GameOffscreenBuffer* Buffer,
 }
 
 internal void
-GameUpdateAndRender(GameInput* input, GameOffscreenBuffer* screenBuffer,
+GameUpdateAndRender(GameMemory* gameMemory, 
+                    GameInput* input, GameOffscreenBuffer* screenBuffer,
                     GameSoundOutputBuffer* soundBuffer) {
     
-    local_persist int xOffset = 0; 
-    local_persist int yOffset = 0;
-    local_persist int toneHz  = 256;
+    ASSERT(sizeof(GameState) <= gameMemory->permanentStorageSize);
+    
+    GameState* gameState = gameMemory->permanentStorage;
+    if(!gameMemory->isInitialized) {
+        gameState->toneHz         = 256;
+        gameMemory->isInitialized = true;
+    }
     
     GameControllerInput* input0 = &input->controllers[0];
     
     if(input0->isAnalog) {
-        toneHz = 256 + (int)(128.0f * (input0->endX));
-        xOffset += (int)4.0f * (input0->endY);
+        gameState->xOffset += (int)4.0f * (input0->endX);
+        gameState->toneHz = 256 + (int)(128.0f * (input0->endY));
     } else {
         
     }
     
     if(input0->down.endedDown) {
-        ++yOffset;
+        ++gameState->yOffset;
     }
     
-    GameOutputSound(soundBuffer, toneHz);
-    Win32RenderGradient(screenBuffer, xOffset, yOffset);
+    GameOutputSound(soundBuffer, gameState->toneHz);
+    Win32RenderGradient(screenBuffer, 
+                        gameState->xOffset, gameState->yOffset);
     
     return;
 }
